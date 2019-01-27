@@ -7,8 +7,8 @@ import uuid
 
 LARGE_PRIME = 15373875993579943603
 RANDOM_NUM_DICT = {}  # 6*14*2 random numbers for the hash functions
-B = 6
-S = 14
+B = 14
+R = 6
 
 
 def random_number():
@@ -21,7 +21,7 @@ def generate_hash(a, b, word_64):
 
 
 def build_hash_sig(sig_num, words):
-    hash_sig = tuple([get_min_hash(sig_num, j, words) for j in range(B)])
+    hash_sig = tuple([get_min_hash(sig_num, j, words) for j in range(R)])
 
     return hash_sig
 
@@ -46,8 +46,8 @@ def main():
     f = open('./question_150k.tsv', encoding='utf8')
 
     # make ditionary of random values for the 14*6 hash functions used in this algorithm
-    for i in range(S):
-        for j in range(B):
+    for i in range(B):
+        for j in range(R):
             RANDOM_NUM_DICT[(i, j, 'a')] = random_number()
             RANDOM_NUM_DICT[(i, j, 'b')] = random_number()
 
@@ -55,20 +55,13 @@ def main():
     '''
             IMPORTANT: THERE HAS TO BE A BETTER WAY TO DO THIS
     '''
-    hash_table_1 = {}
-    hash_table_2 = {}
-    hash_table_3 = {}
-    hash_table_4 = {}
-    hash_table_5 = {}
-    hash_table_6 = {}
-    hash_table_7 = {}
-    hash_table_8 = {}
-    hash_table_9 = {}
-    hash_table_10 = {}
-    hash_table_11 = {}
-    hash_table_12 = {}
-    hash_table_13 = {}
-    hash_table_14 = {}
+    hash_tables = {}
+
+    # create nested dictionary of 14 hash tables
+    for i in range(B):
+        hash_tables["hash_table_{}".format(i)] = {}
+
+    print("Hash Tables: ", hash_tables)
 
     # list of lines with the end "\n" stripped off
     lines = [line.rstrip('\n') for line in f]
@@ -80,10 +73,10 @@ def main():
             # express words in question as a set, to remove duplicates
             words = set(question.strip().split(' '))
 
-            D = [build_hash_sig(j, words) for j in range(S)]
+            D = [build_hash_sig(j, words) for j in range(B)]
 
             if int(qid) % 500 == 1 or int(qid) % 500 == 0:
-                print(qid)
+                print(D)
             '''
             COMPARE D (say D_1) for "question" to every other questions' D (say D_2).
             As long as D_1[i] = D_2[i] for some i, then they are considered "similar".
@@ -97,7 +90,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
