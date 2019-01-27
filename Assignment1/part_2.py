@@ -67,12 +67,21 @@ def main():
     for i in lines[1:]:
 
         (qid, question) = i.split('\t')
-        hash_sig = [build_hash_sig(j + 1, question) for j in range(S)]
+        D = [build_hash_sig(j + 1, question) for j in range(S)]
 
         '''
-        COMPARE hash_sig to every other questions' hash_signature.
-        As long as >= 1 is equal, then their signatures are equal
+        COMPARE D (say D_1) for "question" to every other questions' D (say D_2).
+        As long as D_1[i] = D_2[i] for some i, then they are considered "similar".
+        
+        To record this, we will create a new dictionary, say sim_dict, where we index into
+        the dictionary by qid and the value of the dictionary are the questions similar to the 
+        question with that qid.
+        
         '''
+
+
 
 if __name__ == '__main__':
     main()
+
+
