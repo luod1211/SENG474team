@@ -4,6 +4,7 @@
 from typing import Dict, List
 from fnv import *
 import uuid
+import numpy as np
 
 LARGE_PRIME = 15373875993579943603
 RANDOM_NUM_DICT = {} #6*14*2 random numbers for the hash functions
@@ -18,7 +19,7 @@ def random_number():
 
 def build_hash_sig(sig_num, words):
     hash_sig = tuple([get_min_hash(sig_num, j, words) for j in range(R)])
-
+    #hash_sig = (1,2,3,4,5,6)
     return hash_sig
 
 def get_min_hash(sig_num, min_hash_num, words):
@@ -27,13 +28,16 @@ def get_min_hash(sig_num, min_hash_num, words):
     a = RANDOM_NUM_DICT[(sig_num,min_hash_num,'a')]
     b = RANDOM_NUM_DICT[(sig_num,min_hash_num,'b')]
 
+
+    #print("Words: ", words)
     for word in words:
-        word_encode = word.encode('utf-8')
+        #print("Words: ", words)
+        #word_encode = word.encode('utf-8')
         # fuse the nv.fnv_1a algorithm to hash a string to a 64-bit number
-        word_64 = hash(word_encode, bits=64)
+        #word_64 = hash(word_encode, bits=64)
 
-        hash_code = (a * word_64 + b) % LARGE_PRIME
-
+        hash_code = (a * word + b) % LARGE_PRIME
+        #hash_code = 10
         hash_codes.append(hash_code)
 
     return min(hash_codes)
@@ -42,17 +46,23 @@ def build_hash_tables(questions_as_words):
     for j in range(B):
         #This is like parsing through each questions
         for (qid, words) in questions_as_words:
-            h_j = build_hash_sig(j, words)
+            words_64 = []
+            for word in words:
+                word_encode = word.encode('utf-8')
+                word_64 = hash(word_encode, bits=64)
+                words_64.append(word_64)
 
-            if h_j not in hash_tables["hash_table_{}".format(j)].keys():
-                hash_tables["hash_table_{}".format(j)][h_j] = [int(qid)]
+            h_j = build_hash_sig(j, words_64)
+
+            if h_j not in hash_tables[j].keys():
+                hash_tables[j][h_j] = [int(qid)]
 
             else:
-                hash_tables["hash_table_{}".format(j)][h_j].append(int(qid))
+                hash_tables[j][h_j].append(int(qid))
                 #print("Hello!")
 
 
-            if(int(qid) % 50 == 0 or int(qid) % 50 == 1):
+            if(int(qid) % 1000 == 0 or int(qid) % 1000 == 1):
                 print(qid)
 
 
@@ -67,7 +77,7 @@ def main():
 
     #create nested dictionary of 14 hash tables
     for i in range(B):
-        hash_tables["hash_table_{}".format(i)] = {}
+        hash_tables[i] = {}
 
     print("Hash Tables: ", hash_tables)
 
@@ -77,7 +87,7 @@ def main():
     questions_as_words = []
 
     # questions start on line 2
-    for i in lines[1:1000]:
+    for i in lines[1:]:
         if len(i.split('\t')) == 2:
             (qid, question) = i.split('\t')
             # express words in question as a set, to remove duplicates
@@ -87,11 +97,12 @@ def main():
     build_hash_tables(questions_as_words)
 
     for j in range(B):
-        for sig in hash_tables["hash_table_{}".format(j)]:
-            if len(hash_tables["hash_table_{}".format(j)][sig]) >= 2:
-                hash_tables["hash_table_{}".format(j)][sig]
+        for sig in hash_tables[j]:
+            if len(hash_tables[j][sig]) >= 2:
+                print(hash_tables[j][sig])
 
     #print("Final hash tables: ", hash_tables["hash_table_1"])
 
 if __name__ == '__main__':
     main()
+
