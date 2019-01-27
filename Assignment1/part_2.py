@@ -20,21 +20,12 @@ def generate_hash(a,b,word_64):
 
 
 
-def build_hash_sig(sig_num, question):
-    hash_sig = tuple([get_min_hash(sig_num, j+1, question) for j in range(B)])
+def build_hash_sig(sig_num, words):
+    hash_sig = tuple([get_min_hash(sig_num, j+1, words) for j in range(B)])
 
     return hash_sig
 
-def get_min_hash(sig_num, min_hash_num, question):
-
-    '''
-
-    IMPORTANT: remember to splits words only ONCE per question
-    '''
-
-
-    #express words in question as a set, to remove duplicates
-    words = set(question.strip().split(' '))
+def get_min_hash(sig_num, min_hash_num, words):
     hash_codes = []
 
     a = RANDOM_NUM_DICT[(sig_num,min_hash_num,'a')]
@@ -64,24 +55,29 @@ def main():
     lines = [line.rstrip('\n') for line in f]
 
     # questions start on line 2
-    for i in lines[1:]:
+    for i in lines[1:10000]:
+        if len(i.split('\t')) == 2:
+            (qid, question) = i.split('\t')
+            # express words in question as a set, to remove duplicates
+            words = set(question.strip().split(' '))
+            D = [build_hash_sig(j + 1, words) for j in range(S)]
 
-        (qid, question) = i.split('\t')
-        D = [build_hash_sig(j + 1, question) for j in range(S)]
-
-        '''
-        COMPARE D (say D_1) for "question" to every other questions' D (say D_2).
-        As long as D_1[i] = D_2[i] for some i, then they are considered "similar".
-        
-        To record this, we will create a new dictionary, say sim_dict, where we index into
-        the dictionary by qid and the value of the dictionary are the questions similar to the 
-        question with that qid.
-        
-        '''
+            if int(qid) % 500 == 1 or int(qid) % 500 == 0:
+                print(qid)
+            '''
+            COMPARE D (say D_1) for "question" to every other questions' D (say D_2).
+            As long as D_1[i] = D_2[i] for some i, then they are considered "similar".
+            
+            To record this, we will create a new dictionary, say sim_dict, where we index into
+            the dictionary by qid and the value of the dictionary are the questions similar to the 
+            question with that qid.
+            
+            '''
 
 
 
 if __name__ == '__main__':
     main()
+
 
 
