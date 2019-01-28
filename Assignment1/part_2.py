@@ -16,6 +16,7 @@ outputted into a tsv file, __INSERT_NAME_HERE___
 from typing import Dict, List
 from fnv import *
 import uuid
+import time
 
 B = 14
 R = 6
@@ -115,7 +116,7 @@ def find_sim(questions_as_words,questions_as_words_64,output):
 		#set of qids of similar questions to the current questions
 		similar_questions = set([])
 		
-		output.write(qid + '\t')
+		output.write(str(qid) + '\t')
 
 		#for each hash table, compute hash signature of current question and collect similar qids 
 		for j in range(B):
@@ -141,8 +142,7 @@ def find_sim(questions_as_words,questions_as_words_64,output):
 
 		sim_q_str = ','.join(similar_questions)
 
-		'''TURN INTO FILE WRITE AFTER TESTING'''
-		output.write(sim_q_str, "\n")
+		output.write(sim_q_str + "\n")
 
 '''
 This function preprocesses the lines in the input tsv file by building two dictionaries
@@ -177,6 +177,7 @@ def preprocess(lines,questions_as_words,questions_as_words_64):
 	return (questions_as_words, questions_as_words_64)
 
 def main():
+	t0 = time.perf_counter()
 	f = open('./question_150k.tsv', encoding='utf8')
 	output = open('./question_sim_150.tsv', "w")
 	
@@ -206,7 +207,8 @@ def main():
 	#build hash tables and find similar questions for each question in the database
 	build_hash_tables(questions_as_words_64)
 	find_sim(questions_as_words,questions_as_words_64,output)
-	
+
+	print(time.perf_counter()-t0)
 	f.close()
 	output.close()
 

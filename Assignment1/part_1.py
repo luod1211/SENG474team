@@ -14,6 +14,7 @@ outputted into a tsv file, question_sim_4k.tsv.
 
 import re
 import csv
+import time
 
 '''
 Compute the jaccard similarity between two questions
@@ -56,6 +57,7 @@ def parse_words(lines ,questions):
 	return questions
 
 def main():
+	t0 = time.perf_counter()
 	lines = [line.rstrip('\n') for line in open('./question_4k.tsv', encoding = 'utf8')]
 	questions = []
 	#parse lines so questions has individual words
@@ -78,7 +80,7 @@ def main():
 				simids[idcount].append(qid2)
 		tsv_writer.writerow(simids[idcount])
 		idcount += 1
-
+	print(time.perf_counter()-t0)
 	output.close()
 
 main()
