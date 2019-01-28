@@ -1,94 +1,84 @@
 #!/
 # usr/bin/env python3
 
-from typing import Dict, List
-from fnv import *
-import uuid
+'''
+Title: part_1.py
+Date: January 28th, 2019
+Authors: Luke Rowe, Luod Dai
+Version: Final
+
+This program loops through the database to find similar 
+questions in a database of questions with Jaccard similarity >= 0.6. The results are
+outputted into a tsv file, question_sim_4k.tsv.
+'''
+
+import re
+import csv
+
+'''
+Compute the jaccard similarity between two questions
+
+parameter(s): line1: list: first list being compared
+			  line2: list: second list being compared
+return: float: the float value of the jaccard similarity of two lists
+'''
+def jaccard(line1, line2):
+	intersection = len(list(set(line1).intersection(set(line2))))
+	
+	union = (len(set(line1))+len(set(line2))) - intersection
+	
+	return float(intersection)/union
+
+'''
+parse the words from lines read to individual words for comparison
+parameter(s): lines: list: the lines read from the tsv file
+			  questions: list: the list for the parsed words
+return: questions: list: updated list of parsed words
+'''
+def parse_words(lines ,questions):
+	#counter for the lines
+	lineCount = 0
+	#confirm qids and questions exist, then parse the words
+	for line in lines:
+		if (len(line.split('\t')) == 2) and line.split('\t')[0].isdigit():
+			(qid, question) = line.split('\t')
+			
+			#questions contains pairs: qid and a list of words
+			questions.append([])
+			questions[lineCount].append(qid)
+			
+			words = []  
+			for word in question.split(' '):
+				words.append(word)
+			questions[lineCount].append(words)
+			lineCount += 1
+	
+	return questions
 
 def main():
-    f = open('./question_4k.tsv', encoding='utf8')
+	lines = [line.rstrip('\n') for line in open('./question_4k.tsv', encoding = 'utf8')]
+	questions = []
+	#parse lines so questions has individual words
+	questions = parse_words(lines,questions)
 
-    output = open('./question_sim_4k.tsv', "w")
+	#table with qids and corresponding similar ids
+	simids = []
+	idcount = 0
 
-    output.write("qid" + '\t' + "similar-qids\n")
+	#writing the results to tsv file
+	output = open('./question_sim_4k.tsv', "w")
+	output.write("qid" + '\t' + "similar-qids\n")
+	tsv_writer = csv.writer(output, delimiter=',')
+	
+	for (qid1,line1) in questions:
+		output.write(qid1 + '\t')
+		simids.append([])
+		for (qid2,line2) in questions:
+			if (jaccard(line1, line2) >= 0.6) and (qid2 != qid1):
+				simids[idcount].append(qid2)
+		tsv_writer.writerow(simids[idcount])
+		idcount += 1
 
-    #list of lines with the end "\n" stripped off
-    lines = [line.rstrip('\n') for line in f]
+	output.close()
 
-    #questions start on line 2
-    for i in lines[1:]:
-
-        if len(i.split('\t')) == 2:
-
-            [qid_a,question_a] = i.split('\t')
-            words_a = set(question_a.strip().split(' '))
-
-
-            output.write(qid_a + '\t')
-            result = ''
-            for j in lines[1:]:
-
-                if i is j:
-                    continue
-
-                if len(j.split('\t')) == 2:
-
-                    [qid_b, question_b] = j.split('\t')
-                    words_b = set(question_b.strip().split(' '))
-
-                    sim = len(words_a.intersection(words_b)) / len(words_a.union(words_b))
-
-                    if (sim >= 0.6):
-                        result = result + qid_b + ','
-
-            if result is not '':
-                result = result.rstrip(",")
-
-            if(int(qid_a) % 500 == 0) or (int(qid_a) % 500 == 1):
-                print(qid_a)
-
-            output.write(result + "\n")
-
-
-    f.close()
-
-
-
-
-        #    question_dict[int(i.split('\t')[0])] = i.split('\t')[1]
-
-        #if i == lines[60]:
-        #    print(question_dict)
-            # returns 2 elements: id and the string corresponding to the id
-            # then split by space to get the words in each line
-            #words += i.split('\t')[1].split(' ') #(more Pythonic code)
-
-    # calculate frequencies of words and store them inthe dictionary
-    #words_freq = {}
-    #for word in words:
-     #   if word not in words_freq:
-      #      words_freq[word] = 1
-
-       # else: words_freq[word] += 1
-
-    #print(words_freq['ways'])
-
-
-def build_hash_table(line):
-    hash_table = {}
-    a_count = 0
-    words_a = set(line.strip().split(' '))
-
-    for word in words_a:
-        a_count += 1
-        #word = word.encode('utf-8')
-        hash_table[word] = 0
-    return (hash_table,a_count)
-
-
-def random_number():
-    rand64 = uuid.uuid4().int & (1 << 64) - 1
-    return rand64
-
-if __name__ == '__main__':
-    main()
+main()
