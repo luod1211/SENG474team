@@ -68,7 +68,14 @@ def main():
     loss = compute_loss(X,y,w)
     print("Loss: ", loss)
 
-    
+    D = w.shape[0] - 1
+
+    for i in range(D):
+        output.write("w{}".format(i+1) + '\t')
+    output.write("w0\n")
+
+    for i in range(D+1):
+        output.write(str(w[i]) + "\t")
 
     f.close()
     output.close()
