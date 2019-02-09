@@ -1,7 +1,32 @@
 import numpy as np
 
+
+def compute_loss(X,y,w):
+    N = X.shape[0]
+    y = y.reshape(N,1)
+    loss = (1/(2*N)) * (np.sum(np.power(y - np.matmul(X,w).reshape(N,1),2)))
+    return loss
+
+
 def batch_gradient_descent(X,y):
-    print("Hello Earth")
+    N = X.shape[0]
+    D = X.shape[1] - 1
+    w = np.random.random_sample(D+1)
+    learning_rate = 0.000001
+
+    #T = 200 epochs
+    for T in range(200):
+        for j in range(D+1):
+            #vector of predicted scores
+            y_pred = (np.matmul(X,w)).reshape(N,1)
+            y = y.reshape(N,1)
+
+            #compute gradient and adjust parameters
+            grad = (1/N) * np.sum((y - y_pred).reshape(N,1) * X[:,j].reshape(N,1))
+            w[j] = w[j] + (learning_rate)*(grad)
+        print(T)
+
+    return w
 
 def preprocess(lines):
     #number of data points
@@ -23,23 +48,12 @@ def preprocess(lines):
         feat = no_tab[1:]
         X[data_num] = np.asarray(feat)
 
-        #alternative method, but less "Pythonic"
-        #feat_num = 0
-        #for feat in no_tab[1:]:
-        #    X[tr_num,feat_num] = float(feat)
-        #    feat_num +=1
-        #X[tr_num,feat_num] = 1
-
         data_num += 1
 
     X.astype(float)
     y.astype(float)
 
-    return (X,y)
-
-
-
-
+    return X,y
 
 def main():
     f = open('./data_10k_100.tsv', encoding='utf8')
@@ -49,11 +63,12 @@ def main():
     lines = [line.rstrip('\n') for line in f]
 
     #extract data into numpy arrays
-    (X,y) = preprocess(lines)
-
+    X,y = preprocess(lines)
     w = batch_gradient_descent(X,y)
+    loss = compute_loss(X,y,w)
+    print("Loss: ", loss)
 
-
+    
 
     f.close()
     output.close()
