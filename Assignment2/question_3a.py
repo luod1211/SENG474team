@@ -1,13 +1,13 @@
 '''
-Title: question_2.py
+Title: question_3a.py
 Date: February 10th, 2019
 Authors: Luke Rowe, Luo Dai
 Version: Final
 
-This program performs batch gradient descent on a set
+This program performs stochastic gradient descent on a set
 of 10000 data points each with 100 features. The loss is computed
 and output to the console and the final parameter values w are
-written to a tsv file, question_2_output.tsv
+written to a tsv file, question_3a_output.tsv
 '''
 import numpy as np
 
@@ -26,30 +26,33 @@ def compute_loss(X,y,w):
     return loss
 
 '''
-This function performs batch gradient descent with 200 epochs
+This function performs stochastic gradient descent with 20 epochs
 
 param(s): X: size Nx(D+1) numpy matrix: matrix containing feature values for all N samples
           y: size N numpy array: array of labels
 ret: w: size D+1 numpy array: array of updated parameters
 '''
-def batch_gradient_descent(X,y):
+def sto_gradient_descent(X,y):
     N = X.shape[0]
     D = X.shape[1] - 1
-    #initialize w to D+1 random floats between 0 and 1
     w = np.random.random_sample(D+1)
     learning_rate = 0.000001
 
-    #T = 200 epochs
-    for T in range(200):
-        #update w element-wise
-        for j in range(D+1):
-            #vector of predicted scores
-            y_pred = (np.matmul(X,w)).reshape(N,1)
-            y = y.reshape(N,1)
+    # vector of predicted scores
+    y_pred = (np.matmul(X, w)).reshape(N, 1)
+    y = y.reshape(N, 1)
+
+    #T = 20 epochs
+    for T in range(20):
+        for i in range(N):
+            # update vector of predicted scores
+            y_pred[i] = np.matmul(X[i,:].reshape(1,D+1),w)
 
             #compute gradient and adjust parameters
-            grad = (1/float(N)) * np.sum((y - y_pred).reshape(N,1) * X[:,j].reshape(N,1))
-            w[j] = w[j] + (learning_rate)*(grad)
+            #broadcasting so that all dimensions of w computed at the same time
+            #since m = 1 we only update w using one data point
+            grad = ((y[i] - y_pred[i]) * X[i,:])
+            w = w + (learning_rate)*(grad)
 
     return w
 
@@ -69,8 +72,8 @@ def preprocess(lines):
     X = np.zeros((N,D+1))
     y = np.zeros(N)
 
+
     data_num = 0
-    # start from 4th line as the 4th line is the first line that contains feature data
     for line in lines[3:]:
         no_tab = line.split('\t')
         y[data_num] = no_tab[0]
@@ -82,7 +85,6 @@ def preprocess(lines):
 
         data_num += 1
 
-    # ensure that the array values have type float
     X.astype(float)
     y.astype(float)
 
@@ -90,21 +92,20 @@ def preprocess(lines):
 
 def main():
     f = open('./data_10k_100.tsv', encoding='utf8')
-    output = open('./question_2_output.tsv', "w")
+    output = open('./question_3a_output.tsv', "w")
 
     #extract the lines of the tsv file and remove the end '\n'
     lines = [line.rstrip('\n') for line in f]
 
     #extract data into numpy arrays
     X,y = preprocess(lines)
-
-    w = batch_gradient_descent(X,y)
+    w = sto_gradient_descent(X,y)
     loss = compute_loss(X,y,w)
     print("Loss: ", loss)
 
     D = w.shape[0] - 1
 
-    # output to tsv file
+    #write parameter results to tsv file
     for i in range(D):
         output.write("w{}".format(i+1) + '\t')
     output.write("w0\n")
