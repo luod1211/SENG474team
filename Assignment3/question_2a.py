@@ -124,9 +124,14 @@ def main():
     nodes, edges, Nm, Np = update_graph(nodes,edges,dead_ends)
 
     #print("edges after: ", edges)
-    #print("Nm after: ", Nm, "\nNp after: ", Np)
+    print("Nm after: ", len(Nm), "\nNp after: ", len(Np), "\nNodes after: ", len(nodes))
 
     # v[i] should be of the form [nodeid, pagerankscorenodeid]
+    v = {}
+    for node in nodes:
+        v[node] = 1/len(nodes)
+
+    print("stage 4")
 
     page_rank(nodes, Nm, Np)
 
