@@ -66,7 +66,7 @@ def find_dead_ends(nodes, Nm, Np):
     return dead_ends
 
 def main():
-    f = open("./web-Google_10k.txt", "r")
+    f = open("./web-Google.txt", "r")
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
     nodes, Nm, Np = preprocess(lines)
