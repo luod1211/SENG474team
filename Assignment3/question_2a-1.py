@@ -52,18 +52,20 @@ def find_dead_ends(nodes, Nm, Np):
         D[node] = len(Nm[node])
         if D[node] == 0:
             q.append(node)
-    dead_ends = set()
+    dead_ends = {}
 
     while len(q) != 0:
         i = q.popleft()
         # this condition bottlenecks the algorithm (linear search is BAD)
-        if i not in dead_ends:
-            dead_ends.add(i)
+        if i not in dead_ends.keys():
+            dead_ends[i] = None
             for j in Np[i]:
                 D[j] = D[j] - 1
                 if D[j] == 0:
                     q.append(j)
-    return dead_ends
+    print("DEAD ENDS IN CORRECT ORDER: ", dead_ends.items())
+    print("DEAD ENDS: ", list(dead_ends.keys()))
+    return dead_ends.keys()
 
 def update_graph(nodes1, edges, dead_ends):
     Nm = {}
@@ -130,14 +132,14 @@ def main():
     f = open("./web-Google.txt", "r")
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
-    nodes_with_de, edges, Nm, Np = preprocess(lines)
+    nodes_with_de, edges, Nm_with_de, Np_with_de = preprocess(lines)
 
     #print("Nm: ", Nm, "\nNp: ", Np)
     #print("edges before: ", edges)
 
     print("stage 0")
 
-    dead_ends = find_dead_ends(nodes_with_de, Nm, Np)
+    dead_ends = find_dead_ends(nodes_with_de, Nm_with_de, Np_with_de)
 
     print("stage 1")
 
