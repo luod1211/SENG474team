@@ -101,10 +101,24 @@ def update_graph(nodes, edges, dead_ends):
 
     return nodes, edges, Nm, Np
 
+def page_rank(v, D, Np, id_index, id_index_2, N):
+    beta = 0.85
+    T = 10
+
+    for epoch in range(T):
+        print("epoch: ", epoch)
+        v_before = v.copy()
+        for i in range(N):
+            multiply = v_before#/D;
+            sum = 0
+            for node_id in Np[id_index_2[i]]:
+                sum += multiply[id_index[node_id]]
+            v[i] = beta * sum + (1/N) * (1 - beta)
+
+    return v
 
 
-def page_rank(nodes, Nm, Np):
-    print()
+
 
 def main():
     f = open("./web-Google.txt", "r")
@@ -124,16 +138,30 @@ def main():
     nodes, edges, Nm, Np = update_graph(nodes,edges,dead_ends)
 
     #print("edges after: ", edges)
-    print("Nm after: ", len(Nm), "\nNp after: ", len(Np), "\nNodes after: ", len(nodes))
+    #print("Nm after: ", len(Nm), "\nNp after: ", len(Np), "\nNodes after: ", len(nodes))
 
     # v[i] should be of the form [nodeid, pagerankscorenodeid]
-    v = {}
+    init_size = 1 / len(nodes)
+    v  = np.zeros(len(nodes))
+    D = np.zeros(len(nodes))
+    id_index = {}
+    id_index_2 = {}
+    i = 0
     for node in nodes:
-        v[node] = 1/len(nodes)
+        D[i] = len(Nm[node])
+        v[i] = float(init_size)
+        id_index[node] = i
+        id_index_2[i] = node
+        i += 1
+    #print("Nm: ", Nm)
+    #print("v: ", v, "\nD: ", D)
+    #print("id_index: ", id_index)
 
     print("stage 4")
 
-    page_rank(nodes, Nm, Np)
+    v = page_rank(v, D, Np, id_index, id_index_2, len(nodes))
+
+    print(v)
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
