@@ -106,20 +106,21 @@ def main():
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
     nodes, Nm, Np = preprocess(lines)
-
+    print(find_dead_ends(nodes, Nm, Np))
     output = open("./deadends_10k.tsv", "w")
-    output.write(str(find_dead_ends(nodes, Nm, Np)))
+    for de in find_dead_ends(nodes, Nm, Np):
+        output.write(str(de) + "\n")
     print(time.perf_counter() - t0)
 
-    t0 = time.perf_counter()
-    f = open("./web-Google.txt", "r")
-    # list of lines of the input file
-    lines = [line.rstrip('\n') for line in f]
-    nodes, Nm, Np = preprocess(lines)
-
-    output = open("./deadends_800k.tsv", "w")
-    output.write(str(find_dead_ends(nodes, Nm, Np)))
-    print(time.perf_counter() - t0)
+    # t0 = time.perf_counter()
+    # f = open("./web-Google.txt", "r")
+    # # list of lines of the input file
+    # lines = [line.rstrip('\n') for line in f]
+    # nodes, Nm, Np = preprocess(lines)
+    #
+    # output = open("./deadends_800k.tsv", "w")
+    # output.write(str(find_dead_ends(nodes, Nm, Np)))
+    # print(time.perf_counter() - t0)
 
 
 if __name__ == "__main__":
