@@ -2,6 +2,9 @@ import time
 from collections import deque
 import numpy as np
 
+# number used to avoid division by 0
+SMALL_NUM = 0.0001
+
 def preprocess(lines):
     # set of nodes in the link structure
     nodes = set()
@@ -29,7 +32,7 @@ def preprocess(lines):
             else:
                 Nm[from_node] = set([to_node])
 
-    print("stage -0.5")
+    print("stage -1")
 
     # take the union of the keys in the Nm and Np dictionary
     # to get the set of nodes
@@ -52,18 +55,23 @@ def find_dead_ends(nodes, Nm, Np):
         D[node] = len(Nm[node])
         if D[node] == 0:
             q.append(node)
-    dead_ends = set()
+
+    # we initialize dead_ends to a dictionary for fast tests for containment
+    # and preservation of order (since python dictionaries are ordered (after 3.6))
+    dead_ends = {}
 
     while len(q) != 0:
         i = q.popleft()
         # this condition bottlenecks the algorithm (linear search is BAD)
-        if i not in dead_ends:
-            dead_ends.add(i)
+        if i not in dead_ends.keys():
+            dead_ends[i] = None
             for j in Np[i]:
                 D[j] = D[j] - 1
                 if D[j] == 0:
                     q.append(j)
-    return dead_ends
+
+    # return the keys of the dead_ends in removal order
+    return dead_ends.keys()
 
 def update_graph(nodes, edges, dead_ends):
     Nm = {}
@@ -94,74 +102,124 @@ def update_graph(nodes, edges, dead_ends):
         else:
             Nm[from_node] = set([to_node])
 
+    # there may be nodes with no incoming edge that needs to be added to Np
     for i in set(Nm).difference(set(Np)):
         Np[i] = set([])
+
+    # set dead_end nodes have no incoming, outgoing edges
+    #so that we can compute pagerank scores of non_dead_end nodes and
+    #still traverse through dead_end nodes
+    for node in dead_ends:
+        Np[node] = set([])
+        Nm[node] = set([])
 
     print("stage 3")
 
     return nodes, edges, Nm, Np
 
-def page_rank(v, D, Np, id_index, id_index_2, N):
+def page_rank(v, D, Np, find_array_idx, find_node_id, N_with_de, N):
     beta = 0.85
     T = 10
 
+    # T= 10 epochs
     for epoch in range(T):
         print("epoch: ", epoch)
+        # copy previous pagerank vector
         v_before = v.copy()
-        for i in range(N):
-            multiply = v_before#/D;
+        # vector containing term inside the summation (of equation)
+        inside_sum = v_before / D;
+        #update v element-wise (to save memory)
+        for i in range(N_with_de):
             sum = 0
-            for node_id in Np[id_index_2[i]]:
-                sum += multiply[id_index[node_id]]
+            #sum over the edges that links to node_id and sum the "inside_sum" term
+            for node_id in Np[find_node_id[i]]:
+                sum += inside_sum[find_array_idx[node_id]]
+
             v[i] = beta * sum + (1/N) * (1 - beta)
 
     return v
 
+def page_rank_dead_ends(v, D_with_de, dead_ends, Np_with_de, find_array_idx):
+    # assign dead_end page rank scores to 0 (as they were assigned arbitary values
+    # in computation of non_dead_end page_rank scores
+    for node in dead_ends:
+        v[find_array_idx[node]] = 0
 
+    # vector containing term inside the summation (of equation)
+    inside_sum = v / D_with_de
+
+    # compute page rank score in reverse removal order
+    for node in reversed(list(dead_ends)):
+        sum = 0
+        for node_id in Np_with_de[node]:
+            sum += inside_sum[find_array_idx[node_id]]
+        v[find_array_idx[node]] = sum
+
+        #make change to "inside_sum" array instead of recomputing entire array to save computation time
+        inside_sum[find_array_idx[node]] = sum / D_with_de[find_array_idx[node]]
+
+    return v
 
 
 def main():
-    f = open("./web-Google.txt", "r")
+    f = open("./web-Google_10k.txt", "r")
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
-    nodes, edges, Nm, Np = preprocess(lines)
-
-    #print("Nm: ", Nm, "\nNp: ", Np)
-    #print("edges before: ", edges)
+    nodes, edges, Nm_with_de, Np_with_de = preprocess(lines)
 
     print("stage 0")
 
-    dead_ends = find_dead_ends(nodes, Nm, Np)
-
+    # find the dead ends in the graph
+    dead_ends = find_dead_ends(nodes, Nm_with_de, Np_with_de)
     print("stage 1")
+    # keep copy of the nodes with dead ends included
+    nodes_with_de = nodes.copy()
+    N_with_de = len(nodes_with_de)
 
+    # remove the dead ends from the graph
     nodes, edges, Nm, Np = update_graph(nodes,edges,dead_ends)
+    N = len(nodes)
 
-    #print("edges after: ", edges)
-    #print("Nm after: ", len(Nm), "\nNp after: ", len(Np), "\nNodes after: ", len(nodes))
+    # we initialize variables in one for loop to save computation time
+    #initial page rank score
+    init_score = 1 / N
+    #vector of page rank scores
+    v  = np.zeros(N_with_de)
+    # vector of out-degrees for graph without dead_end nodes
+    D = np.zeros(N_with_de)
+    # vector of out-degrees for original link graph
+    D_with_de = np.zeros(N_with_de)
+    # dictionary that maps node ids to its corresponding array index
+    find_array_idx = {}
+    # dictionary that maps array indexes  to its corresponding node id
+    find_node_id = {}
 
-    # v[i] should be of the form [nodeid, pagerankscorenodeid]
-    init_size = 1 / len(nodes)
-    v  = np.zeros(len(nodes))
-    D = np.zeros(len(nodes))
-    id_index = {}
-    id_index_2 = {}
     i = 0
-    for node in nodes:
+    for node in nodes_with_de:
         D[i] = len(Nm[node])
-        v[i] = float(init_size)
-        id_index[node] = i
-        id_index_2[i] = node
+        # set from 0 to 0.0001 to avoid division by zero in the future
+        if D[i] == 0: D[i] = SMALL_NUM
+        D_with_de[i] = len(Nm_with_de[node])
+        if D_with_de[i] == 0: D_with_de[i] = SMALL_NUM
+
+        # set v to the initial scores
+        v[i] = float(init_score)
+
+        # assign array index/node_id mappings
+        find_array_idx[node] = i
+        find_node_id[i] = node
         i += 1
-    #print("Nm: ", Nm)
-    #print("v: ", v, "\nD: ", D)
-    #print("id_index: ", id_index)
 
-    print("stage 4")
+    # compute page-rank score for all the non-dead_end nodes
+    v = page_rank(v, D, Np, find_array_idx, find_node_id, N_with_de, N)
+    v = page_rank_dead_ends(v, D_with_de, dead_ends, Np_with_de, find_array_idx)
 
-    v = page_rank(v, D, Np, id_index, id_index_2, len(nodes))
+    # TO_DO: sort te page rank scores (USE INDEXING DICTIONARIES)
+    v[::-1].sort()
 
-    print(v)
+    # TO_DO: output to tsv file
+    print(v[0:10])
+
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
