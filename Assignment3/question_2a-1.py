@@ -63,8 +63,8 @@ def find_dead_ends(nodes, Nm, Np):
                 D[j] = D[j] - 1
                 if D[j] == 0:
                     q.append(j)
-    print("DEAD ENDS IN CORRECT ORDER: ", dead_ends.items())
-    print("DEAD ENDS: ", list(dead_ends.keys()))
+    #print("DEAD ENDS IN CORRECT ORDER: ", dead_ends.items())
+    #print("DEAD ENDS: ", list(dead_ends.keys()))
     return dead_ends.keys()
 
 def update_graph(nodes1, edges, dead_ends):
@@ -140,7 +140,7 @@ def main():
     print("stage 0")
 
     dead_ends = find_dead_ends(nodes_with_de, Nm_with_de, Np_with_de)
-
+    print(len(dead_ends))
     print("stage 1")
 
     nodes, edges, Nm, Np = update_graph(nodes_with_de,edges,dead_ends)
@@ -149,7 +149,7 @@ def main():
     #print("Nm after: ", len(Nm), "\nNp after: ", len(Np), "\nNodes after: ", len(nodes))
 
     # v[i] should be of the form [nodeid, pagerankscorenodeid]
-    print(nodes_with_de)
+    #print(nodes_with_de)
 
     init_size = 1 / len(nodes)
     v  = np.zeros(len(nodes_with_de))
@@ -165,12 +165,6 @@ def main():
         id_index_2[i] = node
         i += 1
 
-    print("v", v)
-    print("D", D)
-    #print("Nm: ", Nm)
-    #print("v: ", v, "\nD: ", D)
-    #print("id_index: ", id_index)
-
     print("stage 4")
 
     v = page_rank(v, D, Np, id_index, id_index_2, len(nodes_with_de), len(nodes))
@@ -178,8 +172,29 @@ def main():
     for node in dead_ends:
         v[id_index[node]] = 0
 
-    print(v)
-    print(np.sum(v))
+    #print(v)
+    #print(np.sum(v))
+
+    D_with_de=np.zeros(len(nodes_with_de))
+    i = 0
+    for node in nodes_with_de:
+        D_with_de[i] = len(Nm_with_de[node])
+        if D_with_de[i] == 0: D_with_de[i] = 0.0001
+        i += 1
+
+    multiply = v / D_with_de
+    for node in reversed(list(dead_ends)):
+        #print("Dealing with node: ", node)
+        sum = 0
+        for node_id in Np_with_de[node]:
+            sum += multiply[id_index[node_id]]
+        v[id_index[node]] = sum
+        multiply[id_index[node]] = sum / D_with_de[id_index[node]]
+
+    v[::-1].sort()
+
+    print(v[0:10])
+
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
