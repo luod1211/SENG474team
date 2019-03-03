@@ -1,11 +1,31 @@
+'''
+Title: question_1.py
+Date: March 3rd, 2019
+Authors: Luke Rowe, Luo Dai
+Version: Final
+
+This program finds all the "dead ends" in a dataset(nodes with no outgoing edges
+or all outgoing edges are dead ends), then out puts the final dead ends in a file
+'''
+
 import time
 from collections import deque
 import numpy as np
 
+'''
+This function extracts the data from the lines of the txt file and create the sets for nodes, outgoing and incoming edges
+
+param(s): lines: list: list of lines(strings) from the txt files
+ret: nodes: all the nodes in the dataset
+     Np: incoming edges for each node
+     Nm: outgoing edges for each node
+'''
+
+
 def preprocess(lines):
     # set of nodes in the link structure
     nodes = {}
-    #dictionary of lists where Np[i] is a list of nodes that link to i
+    # dictionary of lists where Np[i] is a list of nodes that link to i
     Np = {}
     # dictionary of lists where N-[i] is a list of nodes that i links to
     Nm = {}
@@ -38,6 +58,17 @@ def preprocess(lines):
 
     return nodes, Nm, Np
 
+
+'''
+This function takes in the set of nodes and connecting edges, and find all the dead ends in the data
+
+param(s): nodes: all the nodes in the dataset
+          Np: incoming edges for each node
+          Nm: outgoing edges for each node
+ret: dead_ends: the node ids of all the dead ends in the data
+'''
+
+
 def find_dead_ends(nodes, Nm, Np):
     # dictionary of out-degrees
     D = {}
@@ -51,8 +82,6 @@ def find_dead_ends(nodes, Nm, Np):
             q.append(node)
     dead_ends = set()
 
-    print("Stage 2")
-
     while len(q) != 0:
         i = q.popleft()
         # this condition bottlenecks the algorithm (linear search is BAD)
@@ -62,19 +91,36 @@ def find_dead_ends(nodes, Nm, Np):
                 D[j] = D[j] - 1
                 if D[j] == 0:
                     q.append(j)
-    print("Stage 3")
+
     return dead_ends
 
+
+'''
+main function to start the program
+'''
+
+
 def main():
+    t0 = time.perf_counter()
     f = open("./web-Google_10k.txt", "r")
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
     nodes, Nm, Np = preprocess(lines)
 
-    print("Stage 1")
-    print(find_dead_ends(nodes, Nm, Np))
+    output = open("./deadends_10k.tsv", "w")
+    output.write(str(find_dead_ends(nodes, Nm, Np)))
+    print(time.perf_counter() - t0)
+
+    t0 = time.perf_counter()
+    f = open("./web-Google.txt", "r")
+    # list of lines of the input file
+    lines = [line.rstrip('\n') for line in f]
+    nodes, Nm, Np = preprocess(lines)
+
+    output = open("./deadends_800k.tsv", "w")
+    output.write(str(find_dead_ends(nodes, Nm, Np)))
+    print(time.perf_counter() - t0)
+
 
 if __name__ == "__main__":
-    t0 = time.perf_counter()
     main()
-    print(time.perf_counter() - t0)
