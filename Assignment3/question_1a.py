@@ -1,11 +1,11 @@
 '''
-Title: question_1.py
-Date: March 3rd, 2019
+Title: question_1a.py
 Authors: Luke Rowe, Luo Dai
 Version: Final
 
-This program finds all the "dead ends" in a dataset(nodes with no outgoing edges
-or all outgoing edges are dead ends), then out puts the final dead ends in a file
+This program finds all the "dead ends" in the 10k dataset(nodes with no outgoing edges
+or all outgoing edges point to dead ends), then outputs the dead ends to a file: deadends_10k.tsv
+
 '''
 
 import time
@@ -16,12 +16,10 @@ import numpy as np
 This function extracts the data from the lines of the txt file and create the sets for nodes, outgoing and incoming edges
 
 param(s): lines: list: list of lines(strings) from the txt files
-ret: nodes: all the nodes in the dataset
-     Np: incoming edges for each node
-     Nm: outgoing edges for each node
+ret: nodes: set: all the nodes in the dataset
+     Np: dict: incoming edges for each node
+     Nm: dict: outgoing edges for each node
 '''
-
-
 def preprocess(lines):
     # set of nodes in the link structure
     nodes = {}
@@ -58,17 +56,15 @@ def preprocess(lines):
 
     return nodes, Nm, Np
 
-
 '''
-This function takes in the set of nodes and connecting edges, and find all the dead ends in the data
-
-param(s): nodes: all the nodes in the dataset
-          Np: incoming edges for each node
-          Nm: outgoing edges for each node
-ret: dead_ends: the node ids of all the dead ends in the data
+This function finds and returns the dead ends in the link structure
+param(s): nodes: set: the set of nodes in the original link structure
+          Np: dict: dictionary indexed by node_id containing the node_id's of the nodes
+          that link to the node_id of the key
+          Nm: dict: dictionary indexed by node_id containing the node_id's of the nodes
+          that the key links to 
+ret: set: set of removed node_ids in removal order
 '''
-
-
 def find_dead_ends(nodes, Nm, Np):
     # dictionary of out-degrees
     D = {}
@@ -80,25 +76,22 @@ def find_dead_ends(nodes, Nm, Np):
         D[node] = len(Nm[node])
         if D[node] == 0:
             q.append(node)
-    dead_ends = set()
+
+    # we make dead_end a dictionary so that we have fast tests for containment
+    # and preservation of order (since python dictionaries are insertion ordered (after 3.7))
+    dead_ends = {}
 
     while len(q) != 0:
         i = q.popleft()
-        # this condition bottlenecks the algorithm (linear search is BAD)
-        if i not in dead_ends:
-            dead_ends.add(i)
+        if i not in dead_ends.keys():
+            dead_ends[i] = None
             for j in Np[i]:
                 D[j] = D[j] - 1
                 if D[j] == 0:
                     q.append(j)
 
-    return dead_ends
-
-
-'''
-main function to start the program
-'''
-
+    # return the keys of the dead_ends in removal order
+    return dead_ends.keys()
 
 def main():
     t0 = time.perf_counter()
@@ -108,19 +101,11 @@ def main():
     nodes, Nm, Np = preprocess(lines)
 
     output = open("./deadends_10k.tsv", "w")
-    output.write(str(find_dead_ends(nodes, Nm, Np)))
+
+    dead_ends = find_dead_ends(nodes,Nm,Np)
+    for node in dead_ends:
+        output.write(str(node) + "\n")
     print(time.perf_counter() - t0)
-
-    t0 = time.perf_counter()
-    f = open("./web-Google.txt", "r")
-    # list of lines of the input file
-    lines = [line.rstrip('\n') for line in f]
-    nodes, Nm, Np = preprocess(lines)
-
-    output = open("./deadends_800k.tsv", "w")
-    output.write(str(find_dead_ends(nodes, Nm, Np)))
-    print(time.perf_counter() - t0)
-
 
 if __name__ == "__main__":
     main()

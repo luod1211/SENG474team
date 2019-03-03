@@ -1,10 +1,10 @@
 '''
 Assignment 3 Programming SENG 474
-File: question_2a.py
+File: question_2b.py
 Authors: Luke Rowe, Luo Dai
 Version: Final
 
-This program runs the page rank algorithm on a dataset of 10000 nodes
+This program runs the page rank algorithm on a dataset of 800000 nodes
 '''
 
 
@@ -225,8 +225,8 @@ def page_rank_dead_ends(v, D_with_de, dead_ends, Np_with_de, find_array_idx):
 
 
 def main():
-    f = open("./web-Google_10k.txt", "r")
-    output = open("./PR_10k.tsv", "w")
+    f = open("./web-Google.txt", "r")
+    output = open("./PR_800k.tsv", "w")
     # list of lines of the input file
     lines = [line.rstrip('\n') for line in f]
     # "with_de" means "with dead ends"
