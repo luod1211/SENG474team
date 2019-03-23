@@ -9,9 +9,6 @@ This program factors a utility matrix into two matrices U and V.
 import numpy as np
 import time
 
-
-
-
 def preprocess(lines,N):
 
     # reindex the user_ids from 0 to n-1. The key is the idx
@@ -25,14 +22,14 @@ def preprocess(lines,N):
 
     # for each user we have a dictionary storing the users' movies and
     # associated ratings
-    users_list = [{}]*N
+    users_list = [dict() for x in range(N)]
 
     user_counter = 0
     movie_counter = 0
-    counter = 0
     for line in lines:
         if len(line.split('\t')) == 4:
             (user_id, movie_id, rating, _) = tuple(map(int, line.split('\t')))
+
             if user_id not in find_user_idx.keys():
                 find_user_id[user_counter] = user_id
                 find_user_idx[user_id] = user_counter
@@ -43,14 +40,10 @@ def preprocess(lines,N):
                 find_movie_idx[movie_id] = movie_counter
                 movie_counter += 1
 
-        if counter % 10000 == 0:
-            print(counter)
-
-        counter += 1
+            users_list[find_user_idx[user_id]][find_movie_idx[movie_id]] = rating
 
     print("Number of users:", len(find_user_id.keys()), len(find_user_idx.keys()))
     print("Numbers of movies:", len(find_movie_id.keys()), len(find_movie_idx.keys()))
-
 
     return find_user_id,find_user_idx, find_movie_id, find_movie_idx, users_list
 
