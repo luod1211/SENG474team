@@ -8,6 +8,7 @@ This program factors a utility matrix into two matrices U and V.
 
 import numpy as np
 import time
+import math
 
 def preprocess(lines,N, M):
 
@@ -44,9 +45,6 @@ def preprocess(lines,N, M):
 
             users_list[find_user_idx[user_id]][find_movie_idx[movie_id]] = rating
             movies_list[find_movie_idx[movie_id]][find_user_idx[user_id]] = rating
-
-    print("Number of users:", len(find_user_id.keys()), len(find_user_idx.keys()))
-    print("Numbers of movies:", len(find_movie_id.keys()), len(find_movie_idx.keys()))
 
     return find_user_id,find_user_idx, find_movie_id, find_movie_idx, users_list, movies_list
 
@@ -87,27 +85,50 @@ def uv_decomp(users_list, movies_list, N, M, D):
 
     return U, V
 
-#def RMSE(U,V,users_list):
+def RMSE(U,V,users_list, N):
+    num = 0
+    denom = 0
+    for i in range(N):
+        for j in users_list[i].keys():
+            num += (np.dot(U[i,:], V[:,j]) - users_list[i][j]) ** 2
+            denom += 1
 
+    rmse = math.sqrt(num) / denom
 
+    return rmse
 
 def main():
-    f = open("./toy_rating.data", "r")
+    f = open("./u.data", "r")
     outputU = open("./UT.tsv", "w")
     outputV = open("./VT.tsv", "w")
     # list of lines of the u.data input file
     lines = [line.rstrip('\n') for line in f]
 
-    N = 3
-    M = 3
-    D = 2
+    N = 943
+    M = 1682
+    D = 20
 
     find_user_id, find_user_idx, find_movie_id, find_movie_idx, users_list, movies_list = preprocess(lines, N, M)
 
+    # find U and V using UV-decomposition
     U, V = uv_decomp(users_list, movies_list, N, M, D)
 
-    print(U)
-    print(V)
+    # RMSE of the UV-decomposition
+    print(RMSE(U,V,users_list,N))
+
+    row = ''
+    for i in range(N):
+        for j in range(D):
+            row = row + str(U[i,j]) + '\t'
+        outputU.write(row.rstrip('\t') + '\n')
+        row = ''
+
+    row = ''
+    for i in range(D):
+        for j in range(M):
+            row = row + str(V[i,j]) + '\t'
+        outputV.write(row.rstrip('\t') + '\n')
+        row = ''
 
     f.close()
     outputU.close()
@@ -116,4 +137,4 @@ def main():
 if __name__ == "__main__":
     t0 = time.perf_counter()
     main()
-    print(time.perf_counter() - t0)
+    print("Run time:", time.perf_counter() - t0)
